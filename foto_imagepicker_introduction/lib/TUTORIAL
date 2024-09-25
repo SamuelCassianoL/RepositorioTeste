@@ -1,0 +1,109 @@
+TUTURIAL
++ App de captura de imagens usando IMAGE_PICKER salvando em um
+diretório acessível por meio do gerenciador de arquivos
+
+
+
+1- Adicionar bibliotecas
+
+- flutter pub add image_picker, path
+
+
+
+
+2- Configuração das permissões
+
+- No arquivo "app/src/main/AndroidManifest.xml" as seguintes permissões,
+dentro da tag manifest, fora e acima de application:
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+3- Execute o código:
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ImageCaptureScreen(),
+    );
+  }
+}
+
+class ImageCaptureScreen extends StatefulWidget {
+  @override
+  _ImageCaptureScreenState createState() => _ImageCaptureScreenState();
+}
+
+class _ImageCaptureScreenState extends State<ImageCaptureScreen> {
+  File? _image;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final XFile? pickedImage = await _picker.pickImage(source: ImageSource.camera);
+
+    if (pickedImage != null) {
+      // Salva a imagem em um diretório público acessível
+      await _saveImage(File(pickedImage.path));
+    }
+  }
+
+  Future<void> _saveImage(File image) async {
+    // Obtenha o diretório público de imagens (Pictures)
+    Directory? directory = Directory('/storage/emulated/0/Pictures');
+
+    if (!await directory.exists()) {
+      directory.create(recursive: true);
+    }
+
+    String imageName = path.basename(image.path);
+    String newPath = path.join(directory.path, imageName);
+    File newImage = await image.copy(newPath);
+
+    setState(() {
+      _image = newImage;
+    });
+
+    print('Imagem salva em: ${newImage.path}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Imagem salva em: ${newImage.path}')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Capturar e Salvar Imagem'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            _image != null
+                ? Image.file(_image!)
+                : Text('Nenhuma imagem capturada.'),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _pickImage,
+              child: Text('Capturar Imagem'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
